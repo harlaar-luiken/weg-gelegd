@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="weg!gelegd - Vind al je voorwerpen in en rond het huis eenvoudig terug met ruimtes, kasten en foto's.">
+    <title>weg!gelegd - Vind je voorwerpen terug</title>
+    
+    <!-- Google Fonts: Outfit (modern/clean) & Playfair Display (warm/cozy/serif headers) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
+    
+    <!-- Custom styling -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app" class="app-container">
+        
+        <!-- Header / Navigation -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-area" id="btn-home-logo">
+                    <span class="logo-icon"><i class="fa-solid fa-compass"></i></span>
+                    <h1 class="logo-text">weg!gelegd</h1>
+                </div>
+                <nav class="nav-actions">
+                    <button id="btn-home" class="btn-nav" title="Dashboard"><i class="fa-solid fa-house"></i></button>
+                    <button id="btn-settings" class="btn-nav" title="Instellingen"><i class="fa-solid fa-gear"></i></button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            
+            <!-- Global Search Section (Always visible at top of dashboard/main views) -->
+            <section id="search-section" class="search-section">
+                <div class="search-bar-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="global-search" placeholder="Zoek op naam, categorie of kast..." autocomplete="off">
+                    <button id="clear-search" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </section>
+
+            <!-- VIEW 1: Dashboard (Overzicht van Ruimtes & Recente Voorwerpen) -->
+            <section id="view-dashboard" class="app-view active">
+                <div class="view-header">
+                    <h2>Mijn Huis</h2>
+                    <div class="header-actions">
+                        <button id="btn-add-room" class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Ruimte toevoegen</button>
+                        <button id="btn-add-item-dashboard" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Voorwerp toevoegen</button>
+                    </div>
+                </div>
+                
+                <!-- Rooms Grid -->
+                <div id="rooms-grid" class="rooms-grid">
+                    <!-- Dynamic rendering via JavaScript -->
+                    <div class="loader-container"><div class="loader"></div></div>
+                </div>
+
+                <!-- Recent Items Section -->
+                <div class="recent-items-section">
+                    <h3>Onlangs toegevoegd</h3>
+                    <div id="recent-items-grid" class="items-grid">
+                        <!-- Dynamic rendering -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: Room Detail (Ruimtes & Kasten & Items) -->
+            <section id="view-room-detail" class="app-view">
+                <div class="room-breadcrumb">
+                    <button id="btn-back-to-dashboard" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Terug naar overzicht</button>
+                </div>
+
+                <div class="room-hero" id="room-detail-hero">
+                    <div class="room-hero-overlay"></div>
+                    <div class="room-hero-content">
+                        <h2 id="room-detail-title">Ruimte Naam</h2>
+                        <div class="room-actions">
+                            <button id="btn-edit-room" class="btn btn-secondary-light"><i class="fa-solid fa-pen"></i> Bewerk ruimte</button>
+                            <button id="btn-delete-room" class="btn btn-danger-light"><i class="fa-solid fa-trash"></i> Verwijder</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-locations (Kasten/Planken) Bar -->
+                <div class="sub-locations-container">
+                    <div class="sub-locations-header">
+                        <h3>Locaties in deze ruimte</h3>
+                        <button id="btn-add-sub-location" class="btn btn-sm btn-secondary"><i class="fa-solid fa-plus"></i> Kast/Plek toevoegen</button>
+                    </div>
+                    <div id="sub-locations-list" class="sub-locations-list">
+                        <!-- Dynamic tags like "Alles", "Kledingkast", "Boekenkast" -->
+                    </div>
+                </div>
+
+                <!-- Items Container -->
+                <div class="items-container">
+                    <div class="items-header">
+                        <h3 id="items-section-title">Voorwerpen</h3>
+                        <button id="btn-add-item" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Voorwerp toevoegen</button>
+                    </div>
+                    
+                    <div id="items-grid" class="items-grid">
+                        <!-- Dynamic rendering of items in this room/sub-location -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: Settings / Supabase Setup -->
+            <section id="view-settings" class="app-view">
+                <div class="view-header">
+                    <h2>Instellingen</h2>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Database Connectie (Supabase)</h3>
+                    <p class="settings-description">
+                        Voor synchronisatie tussen je computer en telefoon gebruiken we een gratis Supabase project. 
+                        Vul hieronder je project URL en API Key (anon-key) in. Deze gegevens worden veilig lokaal in je browser bewaard.
+                    </p>
+                    
+                    <form id="supabase-config-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="settings-supabase-url">Supabase Project URL</label>
+                            <input type="url" id="settings-supabase-url" placeholder="https://your-project-id.supabase.co" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-supabase-key">Supabase Anon Key (API Key)</label>
+                            <input type="password" id="settings-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+                        </div>
+                        
+                        <div class="settings-actions">
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Instellingen opslaan</button>
+                            <button type="button" id="btn-use-mock" class="btn btn-secondary"><i class="fa-solid fa-plug"></i> Testen met Demo Data (Offline)</button>
+                        </div>
+                    </form>
+
+                    <div id="connection-status" class="connection-status status-offline">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">Geen verbinding met Supabase (Demo-modus actief)</span>
+                    </div>
+                </div>
+
+                <div class="settings-card info-card">
+                    <h3>Hoe stel ik Supabase in?</h3>
+                    <ol class="setup-steps">
+                        <li>Ga naar <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">supabase.com</a> en maak een gratis account aan.</li>
+                        <li>Maak een nieuw project genaamd <code>weg-gelegd</code>.</li>
+                        <li>Ga in je Supabase dashboard naar de <strong>SQL Editor</strong> en voer de SQL scripts uit (zie de documentatie).</li>
+                        <li>Maak een openbare Storage bucket genaamd <code>photos</code> voor afbeeldingen.</li>
+                        <li>Kopieer de Project URL en API Key van de <strong>Settings > API</strong> pagina en plak ze hierboven.</li>
+                    </ol>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 weg!gelegd - Jouw voorwerpen, georganiseerd.</p>
+        </footer>
+    </div>
+
+    <!-- MODAL 1: Ruimte Toevoegen / Bewerken -->
+    <div id="modal-room" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-room-title">Ruimte toevoegen</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-room">
+                <input type="hidden" id="room-id">
+                <div class="form-group">
+                    <label for="room-name">Naam van de ruimte</label>
+                    <input type="text" id="room-name" placeholder="bijv. Woonkamer, Garage, Zolder" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-photo">Foto maken of selecteren (optioneel)</label>
+                    <small class="form-help">Maak direct een foto met de camera van je telefoon of selecteer een afbeelding uit je galerij.</small>
+                    <input type="file" id="room-photo" accept="image/*">
+                    <div class="photo-preview" id="room-photo-preview"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-close-modal">Annuleren</button>
+                    <button type="submit" class="btn btn-primary">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Sub-locatie (Kast/Plank) Toevoegen / Bewerken -->
+    <div id="modal-sub-location" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-sub-location-title">Locatie toevoegen</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-sub-location">
+                <input type="hidden" id="sub-location-id">
+                <input type="hidden" id="sub-location-room-id">
+                <div class="form-group">
+                    <label for="sub-location-name">Naam van de kast, plank of doos</label>
+                    <input type="text" id="sub-location-name" placeholder="bijv. Kledingkast, Gereedschapskist, Doos 3" required>
+                </div>
+                <div class="form-group">
+                    <label for="sub-location-desc">Omschrijving (optioneel)</label>
+                    <input type="text" id="sub-location-desc" placeholder="bijv. Tegen de achterwand, linkerbovenhoek">
+                </div>
+                <div class="form-group">
+                    <label for="sub-location-photo">Foto maken of selecteren (optioneel)</label>
+                    <small class="form-help">Maak direct een foto met de camera van je telefoon of selecteer een afbeelding uit je galerij.</small>
+                    <input type="file" id="sub-location-photo" accept="image/*">
+                    <div class="photo-preview" id="sub-location-photo-preview"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-close-modal">Annuleren</button>
+                    <button type="submit" class="btn btn-primary">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Voorwerp (Item) Toevoegen / Bewerken -->
+    <div id="modal-item" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-item-title">Voorwerp toevoegen</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-item">
+                <input type="hidden" id="item-id">
+                
+                <div class="form-group">
+                    <label for="item-room-select">Ruimte</label>
+                    <select id="item-room-select" required>
+                        <option value="">-- Selecteer een ruimte --</option>
+                        <!-- Dynamic rendering of rooms -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-name">Wat is het?</label>
+                    <input type="text" id="item-name" placeholder="bijv. Paspoort, Accuboor, Winterjas" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="item-sub-location">Specifieke plek (Kast/Plank)</label>
+                        <select id="item-sub-location">
+                            <option value="">-- Geen specifieke kast (los in ruimte) --</option>
+                            <!-- Dynamic rendering of sub-locations -->
+                        </select>
+                    </div>
+                    <div class="form-group col">
+                        <label for="item-category">Categorie</label>
+                        <input type="text" id="item-category" placeholder="bijv. Documenten, Gereedschap, Kleding" list="categories-list">
+                        <datalist id="categories-list">
+                            <option value="Gereedschap">
+                            <option value="Documenten">
+                            <option value="Kleding">
+                            <option value="Elektronica">
+                            <option value="Keuken">
+                            <option value="Speelgoed">
+                            <option value="Boeken">
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="item-status">Status</label>
+                        <select id="item-status">
+                            <option value="Aanwezig">Aanwezig</option>
+                            <option value="Uitgeleend">Uitgeleend</option>
+                            <option value="Geleend">Geleend</option>
+                            <option value="Kwijt">Kwijt / Zoeken</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="item-desc">Beschrijving of extra details</label>
+                    <textarea id="item-desc" rows="3" placeholder="bijv. Ligt achterin, in een groen etui. Uitgeleend aan Jan op 12 maart."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="item-photo">Foto maken of selecteren (sterk aanbevolen!)</label>
+                    <small class="form-help">Maak direct een foto met de camera van je telefoon of selecteer een afbeelding uit je galerij.</small>
+                    <input type="file" id="item-photo" accept="image/*">
+                    <div class="photo-preview" id="item-photo-preview"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-close-modal">Annuleren</button>
+                    <button type="submit" class="btn btn-primary">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script loading -->
+    <script src="app.js"></script>
+</body>
+</html>
