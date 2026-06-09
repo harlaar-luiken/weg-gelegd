@@ -452,6 +452,18 @@ function renderRoomDetail() {
         });
         tab.appendChild(editBtn);
 
+        // Add delete button for sub-location
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-card-action delete';
+        deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
+        deleteBtn.title = 'Verwijder plek';
+        deleteBtn.style.marginLeft = '8px';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.deleteSubLocation(sub.id);
+        });
+        tab.appendChild(deleteBtn);
+
         subLocsList.appendChild(tab);
     });
 
@@ -790,6 +802,11 @@ function setupEventListeners() {
     });
     
     document.getElementById('btn-delete-room').addEventListener('click', deleteActiveRoom);
+    
+    const deleteSubLocBtn = document.getElementById('btn-delete-sub-location');
+    if (deleteSubLocBtn) {
+        deleteSubLocBtn.addEventListener('click', deleteActiveSubLocation);
+    }
 
     // Form Submissions
     document.getElementById('form-room').addEventListener('submit', saveRoom);
@@ -973,6 +990,60 @@ async function deleteActiveRoom() {
     }
 }
 
+async function deleteActiveSubLocation() {
+    const id = document.getElementById('sub-location-id').value;
+    if (!id) return;
+    
+    const success = await window.deleteSubLocation(id);
+    if (success) {
+        closeModal();
+    }
+}
+
+window.deleteSubLocation = async function(id) {
+    if (!id) return false;
+    
+    const sub = state.subLocations.find(s => s.id === id);
+    if (!sub) return false;
+    
+    if (!confirm(`Weet je zeker dat je "${sub.name}" wilt verwijderen? Voorwerpen in deze kast worden niet verwijderd, maar komen los in de ruimte te staan.`)) {
+        return false;
+    }
+    
+    if (state.isMockMode) {
+        state.subLocations = state.subLocations.filter(s => s.id !== id);
+        state.items = state.items.map(item => {
+            if (item.sub_location_id === id) {
+                return { ...item, sub_location_id: null };
+            }
+            return item;
+        });
+        saveMockDataToLocalStorage();
+        if (state.activeSubLocationId === id) {
+            state.activeSubLocationId = null;
+        }
+        renderRoomDetail();
+        return true;
+    } else {
+        try {
+            const { error } = await supabaseClient
+                .from('sub_locations')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            if (state.activeSubLocationId === id) {
+                state.activeSubLocationId = null;
+            }
+            loadAllData();
+            return true;
+        } catch (error) {
+            console.error('Fout bij verwijderen kast/plek:', error);
+            alert('Fout bij verwijderen kast/plek uit database: ' + error.message);
+            return false;
+        }
+    }
+};
+
 // Sub-location Modal
 function openSubLocationModal(sub = null) {
     const title = document.getElementById('modal-sub-location-title');
@@ -981,6 +1052,7 @@ function openSubLocationModal(sub = null) {
     const nameInput = document.getElementById('sub-location-name');
     const descInput = document.getElementById('sub-location-desc');
     const preview = document.getElementById('sub-location-photo-preview');
+    const deleteBtn = document.getElementById('btn-delete-sub-location');
     
     document.getElementById('form-sub-location').reset();
     preview.style.display = 'none';
@@ -997,9 +1069,11 @@ function openSubLocationModal(sub = null) {
             preview.style.backgroundImage = `url('${sub.photo_url}')`;
             preview.style.display = 'flex';
         }
+        if (deleteBtn) deleteBtn.style.display = 'inline-block';
     } else {
         title.textContent = 'Kast/Plek toevoegen';
         idInput.value = '';
+        if (deleteBtn) deleteBtn.style.display = 'none';
     }
 
     openModal('modal-sub-location');

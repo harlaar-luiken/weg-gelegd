@@ -182,6 +182,18 @@ input:disabled, select:disabled, textarea:disabled {
     box-shadow: 0 6px 16px rgba(125, 157, 130, 0.3);
 }
 
+.btn-danger {
+    background-color: var(--color-danger);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(214, 109, 96, 0.2);
+}
+
+.btn-danger:hover {
+    background-color: #BD5D51;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(214, 109, 96, 0.3);
+}
+
 .btn-secondary {
     background-color: var(--color-bg-card);
     color: var(--color-dark);
