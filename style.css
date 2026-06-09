@@ -118,24 +118,22 @@ input:disabled, select:disabled, textarea:disabled {
     user-select: none;
 }
 
-.logo-icon {
+.logo-image {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-md);
-    background-color: var(--color-primary);
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    box-shadow: 0 4px 12px rgba(125, 157, 130, 0.3);
+    background-color: #FFFFFF;
+    border: 1.5px solid var(--color-border);
+    padding: 3px;
+    object-fit: contain;
     transition: var(--transition);
+    box-shadow: var(--shadow-sm);
 }
 
-.logo-area:hover .logo-icon {
-    transform: rotate(-10deg) scale(1.05);
-    background-color: var(--color-secondary);
-    box-shadow: 0 4px 12px rgba(214, 128, 96, 0.3);
+.logo-area:hover .logo-image {
+    transform: rotate(-8deg) scale(1.08);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .logo-text {
@@ -1017,10 +1015,9 @@ input:disabled, select:disabled, textarea:disabled {
         font-size: 1.4rem;
     }
     
-    .logo-icon {
+    .logo-image {
         width: 38px;
         height: 38px;
-        font-size: 1.1rem;
     }
 
     .btn-nav {
