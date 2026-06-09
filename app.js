@@ -24,6 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+    // Check URL parameters for auto-configuration from sharing link
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlParam = urlParams.get('url');
+    const keyParam = urlParams.get('key');
+    
+    if (urlParam && keyParam) {
+        try {
+            state.supabaseConfig = {
+                url: decodeURIComponent(urlParam),
+                key: decodeURIComponent(keyParam)
+            };
+            localStorage.setItem('weggelegd_supabase_config', JSON.stringify(state.supabaseConfig));
+            localStorage.setItem('weggelegd_mode', 'supabase');
+            // Clean up the URL bar
+            window.history.replaceState({}, document.title, window.location.pathname);
+            alert('Supabase-verbinding automatisch ingesteld en opgeslagen!');
+        } catch (e) {
+            console.error('Failed to parse sharing link parameters:', e);
+        }
+    }
+
     // Load config from localStorage
     const savedConfig = localStorage.getItem('weggelegd_supabase_config');
     const savedMode = localStorage.getItem('weggelegd_mode');
@@ -130,13 +151,23 @@ async function loadAllDataSilently() {
 function updateConnectionStatus(isOnline, message) {
     const statusDiv = document.getElementById('connection-status');
     const statusText = statusDiv.querySelector('.status-text');
+    const shareCard = document.getElementById('share-card');
+    const shareInput = document.getElementById('share-link-input');
     
     if (isOnline) {
         statusDiv.className = 'connection-status status-online';
         statusText.textContent = message;
+        if (shareCard && shareInput) {
+            shareCard.style.display = 'block';
+            const cleanUrl = window.location.origin + window.location.pathname;
+            shareInput.value = `${cleanUrl}?url=${encodeURIComponent(state.supabaseConfig.url)}&key=${encodeURIComponent(state.supabaseConfig.key)}`;
+        }
     } else {
         statusDiv.className = 'connection-status status-offline';
         statusText.textContent = message;
+        if (shareCard) {
+            shareCard.style.display = 'none';
+        }
     }
 }
 
@@ -769,6 +800,30 @@ function setupEventListeners() {
     setupImagePreview('room-photo', 'room-photo-preview');
     setupImagePreview('sub-location-photo', 'sub-location-photo-preview');
     setupImagePreview('item-photo', 'item-photo-preview');
+
+    // Copy share link button
+    const copyShareLinkBtn = document.getElementById('btn-copy-share-link');
+    if (copyShareLinkBtn) {
+        copyShareLinkBtn.addEventListener('click', () => {
+            const shareInput = document.getElementById('share-link-input');
+            if (shareInput && shareInput.value) {
+                shareInput.select();
+                shareInput.setSelectionRange(0, 99999); // For mobile devices
+                navigator.clipboard.writeText(shareInput.value)
+                    .then(() => {
+                        const originalText = copyShareLinkBtn.innerHTML;
+                        copyShareLinkBtn.innerHTML = '<i class="fa-solid fa-check"></i> Gekopieerd!';
+                        setTimeout(() => {
+                            copyShareLinkBtn.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Kopiëren mislukt:', err);
+                        alert('Kopiëren mislukt. Kopieer de link handmatig uit het tekstveld.');
+                    });
+            }
+        });
+    }
 }
 
 function setupImagePreview(inputId, previewId) {

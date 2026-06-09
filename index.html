@@ -151,6 +151,20 @@
                     </div>
                 </div>
 
+                <div id="share-card" class="settings-card" style="display: none;">
+                    <h3>Huis delen met gezinsleden</h3>
+                    <p class="settings-description">
+                        Deel deze link met je gezinsleden. Zodra ze deze openen op hun telefoon of computer, wordt de verbinding met jouw database automatisch ingesteld!
+                    </p>
+                    <div class="form-group">
+                        <label for="share-link-input">Deelbare link</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="share-link-input" readonly style="flex-grow: 1; background-color: var(--color-bg-base); cursor: text;">
+                            <button type="button" id="btn-copy-share-link" class="btn btn-primary" style="white-space: nowrap; width: auto; padding: 12px 24px;"><i class="fa-solid fa-copy"></i> Kopieer</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-card info-card">
                     <h3>Hoe stel ik Supabase in?</h3>
                     <ol class="setup-steps">
