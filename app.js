@@ -512,25 +512,43 @@ function renderSearchResults() {
     const dashboardHeader = document.querySelector('#view-dashboard .view-header h2');
     dashboardHeader.innerHTML = `Zoekresultaten voor: <em>"${escapeHtml(state.searchQuery)}"</em>`;
 
+    const searchWords = query.split(/\s+/).filter(Boolean);
+
     // Filter items
     const matchingItems = state.items.filter(item => {
+        if (searchWords.length === 0) return true;
         const sub = state.subLocations.find(s => s.id === item.sub_location_id);
         const room = state.rooms.find(r => r.id === item.room_id);
         
-        return (
-            item.name.toLowerCase().includes(query) ||
-            (item.category && item.category.toLowerCase().includes(query)) ||
-            (item.description && item.description.toLowerCase().includes(query)) ||
-            (sub && sub.name.toLowerCase().includes(query)) ||
-            (room && room.name.toLowerCase().includes(query))
+        const searchableTexts = [
+            item.name,
+            item.category || '',
+            item.description || '',
+            sub ? sub.name : '',
+            room ? room.name : ''
+        ].map(t => t.toLowerCase());
+
+        return searchWords.every(word => 
+            searchableTexts.some(text => text.includes(word))
         );
     });
 
     // Filter rooms whose name matches OR which contain matching items
     const matchingRooms = state.rooms.filter(room => {
-        const matchesName = room.name.toLowerCase().includes(query);
+        if (searchWords.length === 0) return true;
+        const roomSubLocs = state.subLocations.filter(s => s.room_id === room.id);
+        const searchableTexts = [
+            room.name,
+            ...roomSubLocs.map(s => s.name),
+            ...roomSubLocs.map(s => s.description || '')
+        ].map(t => t.toLowerCase());
+
+        const matchesRoomItself = searchWords.every(word =>
+            searchableTexts.some(text => text.includes(word))
+        );
+
         const containsMatchingItems = matchingItems.some(item => item.room_id === room.id);
-        return matchesName || containsMatchingItems;
+        return matchesRoomItself || containsMatchingItems;
     });
 
     roomsGrid.innerHTML = '';
@@ -591,6 +609,79 @@ function renderSearchResults() {
     }
 }
 
+function openItemDetailModal(itemId) {
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const photoContainer = document.getElementById('item-detail-photo');
+    const nameEl = document.getElementById('item-detail-name');
+    const statusEl = document.getElementById('item-detail-status');
+    const categoryEl = document.getElementById('item-detail-category');
+    const locationTextEl = document.getElementById('item-detail-location-text');
+    const descEl = document.getElementById('item-detail-description');
+    const descContainer = document.getElementById('item-detail-desc-container');
+    const editBtn = document.getElementById('btn-edit-item-detail');
+
+    // Photo
+    if (item.photo_url) {
+        photoContainer.style.backgroundImage = `url('${item.photo_url}')`;
+        photoContainer.innerHTML = '';
+    } else {
+        photoContainer.style.backgroundImage = 'none';
+        photoContainer.innerHTML = `<i class="fa-solid fa-box" style="font-size: 4.5rem; color: var(--color-primary); opacity: 0.6;"></i>`;
+    }
+
+    // Name
+    nameEl.textContent = item.name;
+    
+    // Status Badge
+    statusEl.textContent = item.status;
+    statusEl.className = 'item-card-status-badge'; // Reset classes
+    let statusClass = 'badge-aanwezig';
+    if (item.status === 'Uitgeleend') statusClass = 'badge-uitgeleend';
+    if (item.status === 'Geleend') statusClass = 'badge-geleend';
+    if (item.status === 'Kwijt') statusClass = 'badge-kwijt';
+    statusEl.classList.add(statusClass);
+
+    // Category
+    if (item.category) {
+        categoryEl.textContent = item.category;
+        categoryEl.style.display = 'inline-block';
+    } else {
+        categoryEl.style.display = 'none';
+    }
+
+    // Location Text
+    const room = state.rooms.find(r => r.id === item.room_id);
+    const subLoc = state.subLocations.find(s => s.id === item.sub_location_id);
+    const roomName = room ? room.name : '';
+    const subLocName = subLoc ? subLoc.name : '';
+    
+    if (roomName && subLocName) {
+        locationTextEl.textContent = `${roomName} \u203a ${subLocName}`;
+    } else if (roomName) {
+        locationTextEl.textContent = roomName;
+    } else {
+        locationTextEl.textContent = 'Onbekende locatie';
+    }
+
+    // Description
+    if (item.description && item.description.trim()) {
+        descEl.textContent = item.description;
+        descContainer.style.display = 'block';
+    } else {
+        descContainer.style.display = 'none';
+    }
+
+    // Edit button connection
+    editBtn.onclick = () => {
+        closeModal();
+        openItemModal(itemId);
+    };
+
+    openModal('modal-item-detail');
+}
+
 function createItemCardHTML(item, room, subLoc, showRoomLink = false) {
     const card = document.createElement('article');
     card.className = 'item-card';
@@ -603,7 +694,7 @@ function createItemCardHTML(item, room, subLoc, showRoomLink = false) {
     if (item.status === 'Uitgeleend') statusClass = 'badge-uitgeleend';
     if (item.status === 'Geleend') statusClass = 'badge-geleend';
     if (item.status === 'Kwijt') statusClass = 'badge-kwijt';
-
+ 
     const locationText = subLoc ? escapeHtml(subLoc.name) : 'Los in ruimte';
     const roomText = room ? escapeHtml(room.name) : '';
     
@@ -630,6 +721,15 @@ function createItemCardHTML(item, room, subLoc, showRoomLink = false) {
             </div>
         </div>
     `;
+
+    // Click handler to open the item detail modal (ignoring action buttons clicks)
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-card-action')) {
+            return;
+        }
+        openItemDetailModal(item.id);
+    });
+
     return card;
 }
 

@@ -27,7 +27,7 @@ Volg deze eenvoudige stappen om de database en foto-opslag in te stellen:
 ### 2. Voer de SQL Database-tabelscripts uit
 1. Ga in het linkermenu van je Supabase dashboard naar de **SQL Editor**.
 2. Klik op **New Query**.
-3. Plak de volgende SQL-code in het venster en klik rechtsonder op **Run**:
+3. Plak de volgende SQL-code in het venster en klik rechtsonder op **Run** (dit maakt de tabellen aan, schakelt Row-Level Security (RLS) in en stelt openbare rechten in zodat de app correct kan communiceren met je database):
 
 ```sql
 -- 1. Kamers Tabel
@@ -60,6 +60,25 @@ CREATE TABLE items (
   status TEXT NOT NULL DEFAULT 'Aanwezig',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 4. Schakel Row-Level Security (RLS) in en sta openbare toegang toe (nodig omdat de app zonder login werkt)
+ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access for rooms" ON rooms FOR SELECT USING (true);
+CREATE POLICY "Allow public insert access for rooms" ON rooms FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update access for rooms" ON rooms FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete access for rooms" ON rooms FOR DELETE USING (true);
+
+ALTER TABLE sub_locations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access for sub_locations" ON sub_locations FOR SELECT USING (true);
+CREATE POLICY "Allow public insert access for sub_locations" ON sub_locations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update access for sub_locations" ON sub_locations FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete access for sub_locations" ON sub_locations FOR DELETE USING (true);
+
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access for items" ON items FOR SELECT USING (true);
+CREATE POLICY "Allow public insert access for items" ON items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update access for items" ON items FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete access for items" ON items FOR DELETE USING (true);
 ```
 
 ### 3. Maak een Storage Bucket voor foto's

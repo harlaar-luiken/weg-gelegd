@@ -619,6 +619,7 @@ input:disabled, select:disabled, textarea:disabled {
     flex-direction: column;
     height: 310px;
     position: relative;
+    cursor: pointer;
 }
 
 .item-card:hover {
